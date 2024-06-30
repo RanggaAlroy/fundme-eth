@@ -3,29 +3,32 @@ pragma solidity ^0.8.18;
 
 import {PriceConverter} from "./PriceConverter.sol";
 
+// gas spend 824,466 we can lowring the gas spend with some teknik with constant and immutable keyword
+// gas spend 804,521 after using constant 
+
 contract fundMe{
     using PriceConverter for uint256;
 
-    uint256 public minimumUSD = 5e18;
+    uint256 public constant MINIMUM_USD = 50 * 1e18;
 
     address[] public funders;
     mapping(address funder => uint256 amountFunded) public addressToAmountFunded;
 
-    address public owner;
+    address public immutable i_owner;  // add immutable to decreasing the gas
 
     constructor() {
-        owner = msg.sender;
+        i_owner = msg.sender;
     }
 
     function fund() public payable {
-    require(msg.value.getConversionRate() >= minimumUSD, "did not meet the minimum USD");
+    require(msg.value.getConversionRate() >= MINIMUM_USD, "did not meet the minimum USD");
     funders.push(msg.sender);
     addressToAmountFunded[msg.sender] += msg.value;
 
     }
 
     function withdraw() public onlyOwner {
-        require(msg.sender == owner, "Must be owner");
+        require(msg.sender == i_owner, "Must be owner");
         for(uint256 funderIndex = 0; funderIndex < funders.length; funderIndex++) {
             address funder = funders[funderIndex];
             addressToAmountFunded[funder] = 0;
@@ -44,7 +47,7 @@ contract fundMe{
     }
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "Sender is not owner");
+        require(msg.sender == i_owner, "Sender is not owner");
         _;
     }
 
